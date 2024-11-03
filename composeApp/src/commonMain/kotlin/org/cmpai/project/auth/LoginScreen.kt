@@ -28,11 +28,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.ExperimentalResourceApi
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun LoginScreen1(
     onLoginSuccess: () -> Unit,
-    viewModel: LoginViewModel,
+    viewModel: LoginViewModel = koinViewModel(),
 ) {
 
     val uiState by viewModel.uiState.collectAsState()

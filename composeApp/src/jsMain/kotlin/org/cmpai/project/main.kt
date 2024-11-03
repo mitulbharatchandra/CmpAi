@@ -4,10 +4,13 @@ import androidx.compose.ui.window.CanvasBasedWindow
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.FirebaseOptions
 import dev.gitlive.firebase.initialize
+import org.cmpai.project.di.initKoin
 import org.jetbrains.skiko.wasm.onWasmReady
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
+
+    initKoin()
 
     Firebase.initialize(
         options = FirebaseOptions(

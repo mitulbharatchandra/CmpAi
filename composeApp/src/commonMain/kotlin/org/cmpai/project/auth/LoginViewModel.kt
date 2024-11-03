@@ -1,6 +1,11 @@
 package org.cmpai.project.auth
 
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -8,11 +13,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
-import org.cmpai.project.base.BaseViewModel
+import kotlinx.coroutines.launch
 
 class LoginViewModel(
     private val authService: AuthService
-) : BaseViewModel() {
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState = _uiState.asStateFlow()
@@ -23,8 +28,11 @@ class LoginViewModel(
     private val _passwordError = MutableStateFlow(false)
     val passwordError = _passwordError.asStateFlow()
 
-    private val _currentUser = MutableStateFlow<User?>(null)
-    val currentUser = _currentUser.asStateFlow()
+    val currentUser: StateFlow<User?> = authService.currentUser.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        null
+    )
 
     private val _isProcessing = MutableStateFlow(false)
     val isProcessing = _isProcessing.asStateFlow()
@@ -36,14 +44,23 @@ class LoginViewModel(
         viewModelScope, SharingStarted.WhileSubscribed(5000), false
     )
 
-    init {
+    private val coroutineContext = SupervisorJob() + CoroutineExceptionHandler { _, throwable ->
+        println("BaseViewModel: Error: ${throwable.message}")
+        //show error message using snackbar for all errors
+    }
 
-        launchWithCatchingException {
-            authService.currentUser.collect {
-                _currentUser.value = it
-            }
-        }
+    private var job: Job? =  null
 
+    private fun launchWithCatchingException(block: suspend CoroutineScope.() -> Unit) {
+        job = viewModelScope.launch(
+            //context = coroutineContext,
+            block = block
+        )
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        job?.cancel()
     }
 
     fun onEmailChange(newValue: String) {
